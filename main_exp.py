@@ -65,7 +65,6 @@ exchanges = {
 
 # Здесь ваш основной код
 
-
 def fetch_price(exchange, symbol):
     try:
         ticker = exchange.fetch_ticker(symbol)
@@ -77,7 +76,6 @@ def fetch_price(exchange, symbol):
         print(f"An error occurred while fetching {symbol} from {exchange.name}: {e}")
         return None
 
-
 def fetch_bybit_price(client, symbol):
     try:
         response = client.Market.Market_symbolInfo(symbol=symbol).result()
@@ -86,6 +84,43 @@ def fetch_bybit_price(client, symbol):
         print(f"Ошибка при получении цены для {symbol} на Bybit: {e}")
         return None
 
+def find_arbitrage_opportunities(exchanges, coins):
+    opportunities = []
+
+    for coin in coins:
+        for exchange1_name, exchange1 in exchanges.items():
+            for exchange2_name, exchange2 in exchanges.items():
+                if exchange1_name != exchange2_name:
+                    symbol1 = coins[coin]
+                    symbol2 = coins[coin]
+
+                    price1 = fetch_price(exchange1, symbol1)
+                    price2 = fetch_price(exchange2, symbol2)
+
+                    if price1 and price2:
+                        if price1 < price2:
+                            opportunities.append({
+                                'Buy Exchange': exchange1_name,
+                                'Sell Exchange': exchange2_name,
+                                'Coin': coin,
+                                'Buy Price': price1,
+                                'Sell Price': price2,
+                                'Profit Percentage': ((price2 - price1) / price1) * 100
+                            })
+
+    return opportunities
+
+def print_arbitrage_opportunities(opportunities):
+    if not opportunities:
+        print("No arbitrage opportunities found.")
+        return
+
+    print("\nArbitrage Opportunities:")
+    for opportunity in opportunities:
+        print(f"Coin: {opportunity['Coin']}")
+        print(f"Buy on {opportunity['Buy Exchange']} at {opportunity['Buy Price']}")
+        print(f"Sell on {opportunity['Sell Exchange']} at {opportunity['Sell Price']}")
+        print(f"Profit Percentage: {opportunity['Profit Percentage']:.2f}%\n")
 
 def main():
     # Конфигурация API ключей для всех бирж должна быть в отдельном файле или окружении, а не в коде!
@@ -137,6 +172,8 @@ def main():
             print(f"Minimum {coin} Price: {min_price}")
             print(f"Maximum {coin} Price: {max_price}")
 
+    arbitrage_opportunities = find_arbitrage_opportunities(exchanges, coins)
+    print_arbitrage_opportunities(arbitrage_opportunities)
 
 if __name__ == '__main__':
     main()
